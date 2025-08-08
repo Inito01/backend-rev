@@ -1,10 +1,11 @@
 import path from 'path';
 import DocumentService from '../domain/services/documentService.js';
+import documentQueue from '../domain/services/documentQueue.js';
 
 class DocumentController {
-  async verifyDocument(req, res) {
+  async verifyMultipleDocument(req, res) {
     try {
-      if (!req.file) {
+      if (!req.files || req.files.length === 0) {
         return res.status(400).json({
           success: false,
           statusCode: 400,
@@ -12,10 +13,55 @@ class DocumentController {
         });
       }
 
-      const file = req.file;
-
+      const files = req.files;
       const allowedExtensions = ['.pdf', '.jpg', '.jpeg'];
-      const fileExtension = path.extname(file.originalname).toLocaleLowerCase();
+
+      for (const file of files) {
+        const fileExtension = path
+          .extname(file.originalname)
+          .toLocaleLowerCase();
+        if (!allowedExtensions.includes(fileExtension)) {
+          return res.status(400).json({
+            success: false,
+            statusCode: 400,
+            message: `Extensión de archivo no permitida en ${file.originalname}. Solo se permiten archivos PDF, JPG y JPEG`,
+          });
+        }
+      }
+
+      // agregar trabajo a la cola
+      const jobId = documentQueue.addJob(files, req.user?.id);
+
+      return res.status(200).json({
+        success: true,
+        statusCode: 200,
+        message: `${files.length} archivo(s) agregado(s) a la cola de procesamiento`,
+        jobId: jobId,
+        fileCount: files.length,
+        files: files.map((f) => ({
+          originalname: f.originalname,
+          size: f.size,
+          mimetype: f.mimetype,
+        })),
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async verifyDocument(req, res) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          statusCode: 400,
+          message: 'No se proporcionó nigun archivo',
+        });
+      }
+
+      const file = req.file;
+      const allowedExtensions = ['.pdf', '.jpg', '.jpeg'];
+      const fileExtension = path.extname(file.originalname).toLowerCase();
 
       if (!allowedExtensions.includes(fileExtension)) {
         return res.status(400).json({
@@ -39,30 +85,62 @@ class DocumentController {
         extractedData: result.extractedData,
       });
     } catch (error) {
-      if (error.code === 'LIMIT_FILE_SIZE') {
+      next(error);
+    }
+  }
+
+  async getJobStatus(req, res, next) {
+    try {
+      const { jobId } = req.params;
+
+      if (!jobId) {
         return res.status(400).json({
           success: false,
           statusCode: 400,
-          message:
-            'El archivo es demasiado grande. El tamaño máximo permitido es 10MB',
+          message: 'ID de trabajo requerido',
         });
       }
 
-      if (error.code === 'LIMIT_UNEXPECTED_FILE') {
-        return res.status(400).json({
+      const jobStatus = documentQueue.getJobStatus(jobId);
+
+      if (!jobStatus) {
+        return res.status(404).json({
           success: false,
-          statusCode: 400,
-          message: 'Campo de archivo inesperado',
+          statusCode: 404,
+          message: 'Trabajo no encontrado',
         });
       }
 
-      return res.status(500).json({
-        success: false,
-        statusCode: 500,
-        message: 'Error interno del servidor',
-        error:
-          process.env.NODE_ENV === 'development' ? error.message : undefined,
+      return res.status(200).json({
+        success: true,
+        statusCode: 200,
+        job: {
+          id: jobStatus.id,
+          status: jobStatus.status,
+          filesCount: jobStatus.files.length,
+          results: jobStatus.results,
+          createdAt: jobStatus.createdAt,
+          startedAt: jobStatus.startedAt,
+          completedAt: jobStatus.completedAt,
+          error: jobStatus.error,
+        },
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getQueueStatus(req, res, next) {
+    try {
+      const queueStatus = documentQueue.getQueueStatus();
+
+      return res.status(200).json({
+        success: true,
+        statusCode: 200,
+        queue: queueStatus,
+      });
+    } catch (error) {
+      next(error);
     }
   }
 }
