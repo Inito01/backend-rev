@@ -48,8 +48,6 @@ class SimpleAnalyzer {
 
     const imageBuffer = await fs.readFile(file.path);
 
-    console.log('PROCESANDO IMAGEN          ~~~~~');
-
     const processedBuffer = await sharp
       .default(imageBuffer)
       .resize(null, 1200, { withoutEnlargement: true })
@@ -58,8 +56,6 @@ class SimpleAnalyzer {
       .sharpen()
       .png()
       .toBuffer();
-
-    console.log('IMAGEN PROCESADA         ~~~~~');
 
     const {
       data: { text, confidence: ocrConfidence },
