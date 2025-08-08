@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import documentRoutes from './routes/documentRoutes.js';
 import errorHandler from './middlewares/errorHandlers.js';
 
@@ -7,6 +8,19 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8000;
+
+// Cors
+const corsOptions = {
+  origin:
+    process.env.NODE_ENV === 'production'
+      ? process.env.FRONTEND_URL
+      : ['http://localhost:5173'],
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+};
+
+app.use(cors(corsOptions));
 
 // Middlewares
 app.use(express.json());
