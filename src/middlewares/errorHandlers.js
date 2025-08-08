@@ -16,7 +16,8 @@ const errorHandlers = (error, req, res, next) => {
         return res.status(400).json({
           success: false,
           statusCode: 400,
-          message: 'Campo de archivo inesperado. Usa el campo "document"',
+          message:
+            'Campo de archivo inesperado. Usa el campo "document" o "documents"',
           errorCode: 'UNEXPECTED_FILE',
         });
 
@@ -24,7 +25,7 @@ const errorHandlers = (error, req, res, next) => {
         return res.status(400).json({
           success: false,
           statusCode: 400,
-          message: 'Demasiados archivos. Solo se permite 1 archivo a la vez',
+          message: 'Demasiados archivos. Solo se permite 5 archivo a la vez',
           errorCode: 'TOO_MANY_FILES',
         });
 
