@@ -52,12 +52,22 @@ class DocumentQueue extends EventEmitter {
       job.startedAt = new Date();
 
       this.emit('jobStarted', job);
+      this.results.set(job.id, job);
 
       const DocumentService = (await import('./documentService.js')).default;
       const documentService = new DocumentService();
 
       // Procesar
+      const totalFiles = job.files.length;
+      let processedFiles = 0;
+
+      job.processedFiles = processedFiles;
+      job.progress = 0;
+      this.results.set(job.id, job);
+      this.emit('jobProgress', job);
+
       for (const file of job.files) {
+        // await delay(2000);  Esto lo use para validar que mi componente de progreso funcionara, al ir muy rapido pues ni se apreciaba.
         try {
           const result = await documentService.analyzeDocument(file);
           job.results.push({
@@ -82,6 +92,12 @@ class DocumentQueue extends EventEmitter {
             processedAt: new Date(),
           });
         }
+
+        processedFiles++;
+        job.processedFiles = processedFiles;
+        job.progress = Math.round((processedFiles / totalFiles) * 100);
+        this.results.set(job.id, job);
+        this.emit('jobProgress', job);
       }
 
       job.status = 'completed';
@@ -96,7 +112,6 @@ class DocumentQueue extends EventEmitter {
       this.emit('jobFailed', job);
     }
 
-    // Actualizar el resultado en el Map
     this.results.set(job.id, job);
   }
 
@@ -111,7 +126,15 @@ class DocumentQueue extends EventEmitter {
   generateJobId() {
     return `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
+
+  getJob(jobId) {
+    return this.results.get(jobId);
+  }
 }
+
+// function delay(ms) {
+//   return new Promise((resolve) => setTimeout(resolve, ms));
+// }
 
 const documentQueue = new DocumentQueue();
 
