@@ -418,7 +418,6 @@ class SimpleAnalyzer {
 
   extractVehicleData(text) {
     const extractedData = {};
-    const textLower = text.toLowerCase();
 
     let patenteMatch = null;
     const placaPatenteRegex =
@@ -441,22 +440,81 @@ class SimpleAnalyzer {
       /\d{1,2}[\/\-\s][a-zA-ZáéíóúÁÉÍÓÚ]*[\/\-\s]\d{2,4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/g;
     const dates = text.match(datePattern) || [];
 
-    const fechaEmisionPattern =
-      /fecha\s*:?\s*(\d{1,2}[\/\-\s][a-zA-ZáéíóúÁÉÍÓÚ]*[\/\-\s]\d{2,4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i;
-    const fechaEmisionMatch = text.match(fechaEmisionPattern);
-    if (fechaEmisionMatch && fechaEmisionMatch[1]) {
-      extractedData.fechaEmision = fechaEmisionMatch[1].trim();
-    } else if (dates.length >= 1) {
-      extractedData.fechaEmision = dates[0];
+    const fechaEmisionPatterns = [
+      /fecha\s*:?\s*(\d{1,2}\s+de\s+[a-zA-ZáéíóúÁÉÍÓÚ]+\s+de\s+\d{4})/i,
+      /fecha\s*:?\s*(\d{1,2}[\/\-\s][a-zA-ZáéíóúÁÉÍÓÚ]*[\/\-\s]\d{2,4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i,
+      /fecha[\s\n\r]*(\d{1,2}[\s\n\r]*[a-zA-ZáéíóúÁÉÍÓÚ]+[\s\n\r]*\d{4})/i,
+    ];
+
+    let foundEmision = false;
+    for (const pattern of fechaEmisionPatterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        const fechaLimpia = match[1]
+          .replace(/[\n\r]+/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        extractedData.fechaEmision = fechaLimpia;
+        foundEmision = true;
+        break;
+      }
     }
 
-    const fechaVencimientoPattern =
-      /v[aá]lida\s*hasta\s*:?\s*(\d{1,2}[\/\-\s][a-zA-ZáéíóúÁÉÍÓÚ]*[\/\-\s]\d{2,4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i;
-    const fechaVencimientoMatch = text.match(fechaVencimientoPattern);
-    if (fechaVencimientoMatch && fechaVencimientoMatch[1]) {
-      extractedData.fechaVencimiento = fechaVencimientoMatch[1].trim();
-    } else if (dates.length >= 2) {
-      extractedData.fechaVencimiento = dates[1];
+    if (!foundEmision && dates.length >= 1) {
+      extractedData.fechaEmision = dates[0]
+        .replace(/[\n\r]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    const fechaVencimientoPatterns = [
+      /revisi[oó]n\s*t[eé]cnica\s*v[aá]lida\s*hasta\s*:?\s*(\d{1,2}[\/\-\s][a-zA-ZáéíóúÁÉÍÓÚ]*[\/\-\s]\d{2,4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i,
+      /v[aá]lida\s*hasta\s*:?\s*(\d{1,2}[\/\-\s][a-zA-ZáéíóúÁÉÍÓÚ]*[\/\-\s]\d{2,4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i,
+      /(\d{1,2}\s*[a-zA-ZáéíóúÁÉÍÓÚ]+\s*\d{4})\s*este certificado contiene/i,
+    ];
+
+    let foundVencimiento = false;
+    for (const pattern of fechaVencimientoPatterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        const fechaLimpia = match[1]
+          .replace(/[\n\r]+/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        extractedData.fechaVencimiento = fechaLimpia;
+        foundVencimiento = true;
+        break;
+      }
+    }
+
+    if (!foundVencimiento) {
+      const seccionValidezPattern =
+        /REVISI[OÓ]N\s*T[EÉ]CNICA\s*V[AÁ]LIDA\s*HASTA.*?(\d{1,2}\s*[a-zA-ZáéíóúÁÉÍÓÚ]+\s*\d{4})/i;
+      const seccionMatch = text.match(seccionValidezPattern);
+      if (seccionMatch && seccionMatch[1]) {
+        const fechaLimpia = seccionMatch[1]
+          .replace(/[\n\r]+/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        extractedData.fechaVencimiento = fechaLimpia;
+        foundVencimiento = true;
+      }
+    }
+
+    if (!foundVencimiento && dates.length >= 2) {
+      const uniqueDates = [
+        ...new Set(
+          dates.map((d) =>
+            d
+              .replace(/[\n\r]+/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim()
+          )
+        ),
+      ];
+      if (uniqueDates.length >= 2) {
+        extractedData.fechaVencimiento = uniqueDates[1];
+      }
     }
 
     const tipoVehiculoPatterns = [
@@ -474,13 +532,23 @@ class SimpleAnalyzer {
       }
     }
 
-    const carroceriaPattern = /carrocer[ií]a\s*:?\s*([^\n\r,.;]+)/i;
+    const carroceriaPattern =
+      /carrocer[ií]a\s*:?\s*([^\n\r,.;]+)|estado\s*de\s*carrocer[ií]a\s*(y\/o\s*cabina)?/i;
     const carroceriaMatch = text.match(carroceriaPattern);
-    if (carroceriaMatch && carroceriaMatch[1]) {
-      if (extractedData.tipoVehiculo) {
-        extractedData.tipoVehiculo += ` - CARROCERÍA: ${carroceriaMatch[1].trim()}`;
-      } else {
-        extractedData.tipoVehiculo = `CARROCERÍA: ${carroceriaMatch[1].trim()}`;
+    if (carroceriaMatch) {
+      if (carroceriaMatch[1]) {
+        const carroceriaText = carroceriaMatch[1].trim();
+        if (extractedData.tipoVehiculo) {
+          extractedData.tipoVehiculo += ` - CARROCERÍA: ${carroceriaText}`;
+        } else {
+          extractedData.tipoVehiculo = `CARROCERÍA: ${carroceriaText}`;
+        }
+      } else if (carroceriaMatch[2]) {
+        if (extractedData.tipoVehiculo) {
+          extractedData.tipoVehiculo += ` - CARROCERÍA: ${carroceriaMatch[2]}`;
+        } else {
+          extractedData.tipoVehiculo = `CARROCERÍA: ${carroceriaMatch[2]}`;
+        }
       }
     }
 
@@ -526,24 +594,30 @@ class SimpleAnalyzer {
 
     let resultadoEncontrado = false;
 
-    if (text.match(/aprobado[\s\n\r]*[xX✓]|[xX✓][\s\n\r]*aprobado/i)) {
-      extractedData.resultado = 'APROBADO';
-      resultadoEncontrado = true;
-    } else if (text.match(/rechazado[\s\n\r]*[xX✓]|[xX✓][\s\n\r]*rechazado/i)) {
-      extractedData.resultado = 'RECHAZADO';
-      resultadoEncontrado = true;
+    const aprobadoMarcadoPatterns = [
+      /aprobado[\s\n\r]*(?:[xX✓•]|sello|stamp)/i,
+      /(?:[xX✓•]|sello|stamp)[\s\n\r]*aprobado/i,
+      /aprobado.*?(?:^|\n)[\s\n\r]*[aA][\s\n\r]/,
+    ];
+
+    const rechazadoMarcadoPatterns = [
+      /rechazado[\s\n\r]*(?:[xX✓•]|sello|stamp)/i,
+      /(?:[xX✓•]|sello|stamp)[\s\n\r]*rechazado/i,
+      /rechazado.*?(?:^|\n)[\s\n\r]*[rR][\s\n\r]/,
+    ];
+
+    for (const pattern of aprobadoMarcadoPatterns) {
+      if (text.match(pattern)) {
+        extractedData.resultado = 'APROBADO';
+        resultadoEncontrado = true;
+        break;
+      }
     }
 
     if (!resultadoEncontrado) {
-      const resultadoPatterns = [
-        /resultado\s*:?\s*([^\n\r,.;]+)/i,
-        /resultado:[\s\n\r]*(aprobado|rechazado)/i,
-      ];
-
-      for (const pattern of resultadoPatterns) {
-        const match = text.match(pattern);
-        if (match && match[1]) {
-          extractedData.resultado = match[1].trim();
+      for (const pattern of rechazadoMarcadoPatterns) {
+        if (text.match(pattern)) {
+          extractedData.resultado = 'RECHAZADO';
           resultadoEncontrado = true;
           break;
         }
@@ -551,53 +625,65 @@ class SimpleAnalyzer {
     }
 
     if (!resultadoEncontrado) {
-      if (textLower.includes('aprobado') && !textLower.includes('rechazado')) {
+      const resultadoSeccionPattern = /resultado\s*:?\s*([^\n\r,;]+)/i;
+      const resultadoMatch = text.match(resultadoSeccionPattern);
+      if (resultadoMatch && resultadoMatch[1]) {
+        const resultadoText = resultadoMatch[1].trim().toLowerCase();
+        if (resultadoText.includes('aprob')) {
+          extractedData.resultado = 'APROBADO';
+        } else if (resultadoText.includes('rechaz')) {
+          extractedData.resultado = 'RECHAZADO';
+        } else if (resultadoText) {
+          const esFecha =
+            /\d{1,2}[\/\-\s][a-zA-ZáéíóúÁÉÍÓÚ]*[\/\-\s]\d{2,4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(
+              resultadoText
+            );
+          if (!esFecha) {
+            extractedData.resultado = resultadoText.toUpperCase();
+            resultadoEncontrado = true;
+          }
+        }
+      }
+    }
+
+    if (
+      !resultadoEncontrado ||
+      (extractedData.resultado && extractedData.resultado.trim() === '•')
+    ) {
+      const aprobadoContexto =
+        /aprobado[\s\n\r]*[•✓xX]/i.test(text) ||
+        /[•✓xX][\s\n\r]*aprobado/i.test(text);
+      const rechazadoContexto =
+        /rechazado[\s\n\r]*[•✓xX]/i.test(text) ||
+        /[•✓xX][\s\n\r]*rechazado/i.test(text);
+
+      if (aprobadoContexto && !rechazadoContexto) {
         extractedData.resultado = 'APROBADO';
-      } else if (
-        textLower.includes('rechazado') &&
-        !textLower.includes('aprobado')
-      ) {
+        resultadoEncontrado = true;
+      } else if (!aprobadoContexto && rechazadoContexto) {
         extractedData.resultado = 'RECHAZADO';
-      } else if (
-        textLower.includes('aprobado') &&
-        textLower.includes('rechazado')
-      ) {
-        const contextoAprobado = text.match(
-          /[A-Z]{1,3}[\s\n\r]*aprobado|aprobado[\s\n\r]*[A-Z]{1,3}/i
+        resultadoEncontrado = true;
+      } else {
+        const textoAprobado = text.substring(
+          text.toLowerCase().indexOf('aprobado') - 50,
+          text.toLowerCase().indexOf('aprobado') + 200
         );
-        const contextoRechazado = text.match(
-          /[A-Z]{1,3}[\s\n\r]*rechazado|rechazado[\s\n\r]*[A-Z]{1,3}/i
+        const textoRechazado = text.substring(
+          text.toLowerCase().indexOf('rechazado') - 50,
+          text.toLowerCase().indexOf('rechazado') + 200
         );
 
-        if (contextoAprobado && !contextoRechazado) {
+        const marcadoresAprobado = (textoAprobado.match(/[•✓xXaA]/g) || [])
+          .length;
+        const marcadoresRechazado = (textoRechazado.match(/[•✓xXrR]/g) || [])
+          .length;
+
+        if (marcadoresAprobado > marcadoresRechazado) {
           extractedData.resultado = 'APROBADO';
-        } else if (!contextoAprobado && contextoRechazado) {
+        } else if (marcadoresRechazado > marcadoresAprobado) {
           extractedData.resultado = 'RECHAZADO';
         } else {
-          const posAprobado = textLower.indexOf('aprobado');
-          const posRechazado = textLower.indexOf('rechazado');
-          const cercanoAprobado = textLower.substring(
-            Math.max(0, posAprobado - 20),
-            posAprobado + 20
-          );
-          const cercanoRechazado = textLower.substring(
-            Math.max(0, posRechazado - 20),
-            posRechazado + 20
-          );
-
-          if (
-            cercanoAprobado.includes('x') ||
-            cercanoAprobado.includes('✓') ||
-            cercanoAprobado.includes('•')
-          ) {
-            extractedData.resultado = 'APROBADO';
-          } else if (
-            cercanoRechazado.includes('x') ||
-            cercanoRechazado.includes('✓') ||
-            cercanoRechazado.includes('•')
-          ) {
-            extractedData.resultado = 'RECHAZADO';
-          }
+          extractedData.resultado = 'APROBADO';
         }
       }
     }
@@ -620,11 +706,29 @@ class SimpleAnalyzer {
       extractedData.chasis = chasisMatch[1].trim();
     }
 
-    const validezPattern =
-      /revisi[oó]n\s*t[eé]cnica\s*v[aá]lida\s*hasta\s*:?\s*([^\n\r,.;]+)/i;
+    const validezPattern = /revisi[oó]n\s*t[eé]cnica\s*v[aá]lida\s*hasta/i;
     const validezMatch = text.match(validezPattern);
-    if (validezMatch && validezMatch[1]) {
-      extractedData.validezHasta = validezMatch[1].trim();
+
+    if (validezMatch) {
+      const validezTexto = text.substring(
+        validezMatch.index + validezMatch[0].length,
+        validezMatch.index + validezMatch[0].length + 50
+      );
+      const fechaEnValidez = validezTexto.match(
+        /(\d{1,2}[\/\-\s][a-zA-ZáéíóúÁÉÍÓÚ]*[\/\-\s]\d{2,4}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/
+      );
+
+      if (fechaEnValidez && fechaEnValidez[1]) {
+        extractedData.validezHasta = fechaEnValidez[1].trim();
+
+        if (!extractedData.fechaVencimiento) {
+          extractedData.fechaVencimiento = fechaEnValidez[1].trim();
+        }
+      }
+    }
+
+    if (extractedData.fechaVencimiento && !extractedData.validezHasta) {
+      extractedData.validezHasta = extractedData.fechaVencimiento;
     }
 
     extractedData.camposCompletados = Object.keys(extractedData).filter(
