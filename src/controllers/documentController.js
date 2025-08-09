@@ -29,7 +29,6 @@ class DocumentController {
         }
       }
 
-      // agregar trabajo a la cola
       const jobId = documentQueue.addJob(files, req.user?.id);
 
       return res.status(200).json({
@@ -49,46 +48,6 @@ class DocumentController {
     }
   }
 
-  async verifyDocument(req, res) {
-    try {
-      if (!req.file) {
-        return res.status(400).json({
-          success: false,
-          statusCode: 400,
-          message: 'No se proporcionó nigun archivo',
-        });
-      }
-
-      const file = req.file;
-      const allowedExtensions = ['.pdf', '.jpg', '.jpeg'];
-      const fileExtension = path.extname(file.originalname).toLowerCase();
-
-      if (!allowedExtensions.includes(fileExtension)) {
-        return res.status(400).json({
-          success: false,
-          statusCode: 400,
-          message:
-            'Extensión de archivo no permitida. Solo se permiten archivos PDF, JPG y JPEG',
-        });
-      }
-
-      const documentService = new DocumentService();
-      const result = await documentService.analyzeDocument(file);
-
-      return res.status(200).json({
-        success: true,
-        statusCode: 200,
-        message: 'Documento procesado correctamente',
-        result: result.status,
-        confidence: result.confidence,
-        details: result.details,
-        extractedData: result.extractedData,
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
   async getJobStatus(req, res, next) {
     try {
       const { jobId } = req.params;
@@ -101,7 +60,7 @@ class DocumentController {
         });
       }
 
-      const jobStatus = documentQueue.getJobStatus(jobId);
+      const jobStatus = documentQueue.getJob(jobId);
 
       if (!jobStatus) {
         return res.status(404).json({
@@ -119,25 +78,18 @@ class DocumentController {
           status: jobStatus.status,
           filesCount: jobStatus.files.length,
           results: jobStatus.results,
+          processedFiles: jobStatus.processedFiles || jobStatus.results.length,
+          totalFiles: jobStatus.files.length,
+          progress:
+            jobStatus.progress ||
+            Math.round(
+              (jobStatus.results.length / jobStatus.files.length) * 100
+            ),
           createdAt: jobStatus.createdAt,
           startedAt: jobStatus.startedAt,
           completedAt: jobStatus.completedAt,
           error: jobStatus.error,
         },
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async getQueueStatus(req, res, next) {
-    try {
-      const queueStatus = documentQueue.getQueueStatus();
-
-      return res.status(200).json({
-        success: true,
-        statusCode: 200,
-        queue: queueStatus,
       });
     } catch (error) {
       next(error);
