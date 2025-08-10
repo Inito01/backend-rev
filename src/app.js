@@ -4,6 +4,8 @@ import cors from 'cors';
 import documentRoutes from './routes/documentRoutes.js';
 import errorHandler from './middlewares/errorHandlers.js';
 
+import { initializeDatabase } from './config/database.js';
+
 dotenv.config();
 
 const app = express();
@@ -36,6 +38,16 @@ app.use('/api/documents', documentRoutes);
 // Handler global de errores
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en el puerto ${PORT}`);
-});
+const startServer = async () => {
+  try {
+    await initializeDatabase();
+
+    app.listen(PORT, () => {
+      console.log(`Servidor corriendo en el puerto ${PORT}`);
+    });
+  } catch (error) {
+    console.error('Error al iniciar el servidor: ', error);
+  }
+};
+
+startServer();
