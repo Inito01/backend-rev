@@ -1,4 +1,5 @@
 import EventEmitter from 'events';
+import documentRepository from '../../infraestructure/repositories/documentRepository.js';
 
 class DocumentQueue extends EventEmitter {
   constructor() {
@@ -70,6 +71,23 @@ class DocumentQueue extends EventEmitter {
         // await delay(2000);  Esto lo use para validar que mi componente de progreso funcionara, al ir muy rapido pues ni se apreciaba.
         try {
           const result = await documentService.analyzeDocument(file);
+
+          await documentRepository.saveDocument({
+            jobId: job.id,
+            userId: job.userId,
+            fileName: file.filename,
+            originalName: file.originalname,
+            fileSize: file.size,
+            mimeType: file.mimetype,
+            filePath: file.path,
+            status: result.status,
+            confidence: result.confidence,
+            analysisDetails: result.details,
+            extractedData: result.extractedData,
+            issues: result.issues,
+            summary: result.summary,
+          });
+
           job.results.push({
             file: {
               originalname: file.originalname,
