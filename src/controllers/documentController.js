@@ -1,6 +1,6 @@
 import path from 'path';
-import DocumentService from '../domain/services/documentService.js';
 import documentQueue from '../domain/services/documentQueue.js';
+import documentRepository from '../infraestructure/repositories/documentRepository.js';
 
 class DocumentController {
   async verifyMultipleDocument(req, res) {
@@ -89,6 +89,81 @@ class DocumentController {
           startedAt: jobStatus.startedAt,
           completedAt: jobStatus.completedAt,
           error: jobStatus.error,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getDocumentHistory(req, res, next) {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const offset = (page - 1) * limit;
+
+      const userId = req.user?.id; // TODO:  implementar auth
+
+      let documents;
+      if (userId) {
+        documents = await documentRepository.getDocumentByUserId(
+          userId,
+          limit,
+          offset
+        );
+      } else {
+        documents = await documentRepository.getAllDocuments(limit, offset);
+      }
+
+      const totalPages = Math.ceil(documents.count / limit);
+
+      return res.status(200).json({
+        success: true,
+        statusCode: 200,
+        data: {
+          documents: documents.rows,
+          pagination: {
+            total: documents.count,
+            page,
+            limit,
+            totalPages,
+          },
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getDocumentsByJobId(req, res, next) {
+    try {
+      const { jobId } = req.params;
+
+      if (!jobId) {
+        return res.status(400).json({
+          success: false,
+          statusCode: 400,
+          message: 'ID de Job es requerido',
+        });
+      }
+
+      const documents = await documentRepository.getDocumentsByJobId(jobId);
+
+      if (!documents || documents.length === 0) {
+        return res.status(404).json({
+          success: false,
+          statusCode: 404,
+          message: 'No se encontraron documentos para ese Job',
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        statusCode: 200,
+        data: {
+          jobId,
+          count: documents.length,
+          documents,
         },
       });
     } catch (error) {
