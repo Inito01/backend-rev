@@ -12,6 +12,9 @@ router.post(
 );
 
 router.get('/job/:jobId', documentController.getJobStatus);
+router.get('/job/:jobId/documents', documentController.getDocumentsByJobId);
+
+router.get('/history', documentController.getDocumentHistory);
 
 router.get('/supported-types', (req, res) => {
   res.json({
@@ -38,6 +41,8 @@ router.get('/supported-types', (req, res) => {
     endpoints: {
       multipleFiles: '/api/documents/verify-multiple',
       jobStatus: '/api/documents/job/:jobId',
+      documentsByJobId: '/api/documents/job/:jobId/documents',
+      historyOfDocuments: 'api/documents/history',
     },
   });
 });
