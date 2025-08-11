@@ -1,0 +1,21 @@
+{
+  "transform": {},
+  "testMatch": ["**/test/**/*.test.js"],
+  "testEnvironment": "node",
+  "collectCoverageFrom": [
+    "src/**/*.js",
+    "!src/app.js",
+    "!src/domain/services/analyzers/**",
+    "!src/infraestructure/database/models/**",
+    "!**/node_modules/**"
+  ],
+  "coverageThreshold": {
+    "global": {
+      "branches": 80,
+      "functions": 80,
+      "lines": 80,
+      "statements": 80
+    }
+  },
+  "setupFilesAfterEnv": ["./test/setupTests.js"]
+}
