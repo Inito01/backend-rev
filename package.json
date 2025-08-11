@@ -40,7 +40,6 @@
     "prettier": "^3.6.2",
     "supertest": "^7.0.0",
     "@babel/preset-env": "^7.24.3",
-    "babel-jest": "^30.0.5",
-    "jest-mock-extended": "^3.0.5"
+    "babel-jest": "^30.0.5"
   }
 }
