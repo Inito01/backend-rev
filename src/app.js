@@ -2,7 +2,8 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import documentRoutes from './routes/documentRoutes.js';
-import errorHandler from './middlewares/errorHandlers.js';
+import authRoutes from './routes/authRoutes.js';
+import errorHandler from './middlewares/errorHandler.js';
 
 import { initializeDatabase } from './config/database.js';
 
@@ -33,6 +34,7 @@ app.get('/', (req, res) => {
   res.send('Testeo de backend');
 });
 
+app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 
 // Handler global de errores
