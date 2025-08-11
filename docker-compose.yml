@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: revtec-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src/uploads:/app/src/uploads
+      - ./database:/app/database
+    environment:
+      - NODE_ENV=production
+      - PORT=8000
+      - OCR_SPACE_API_KEY=ocr-api-key
+      - JWT_SECRET=your-secret
+    networks:
+      - revtec-network
+
+  frontend:
+    build: ../frontend-rev
+    container_name: revtec-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=/api
+    networks:
+      - revtec-network
+
+networks:
+  revtec-network:
+    driver: bridge
+
+volumes:
+  database:
+    driver: local
