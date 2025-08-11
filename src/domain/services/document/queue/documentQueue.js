@@ -55,7 +55,13 @@ class DocumentQueue extends EventEmitter {
       this.emit('jobStarted', job);
       this.results.set(job.id, job);
 
-      const DocumentService = (await import('../documentService.js')).default;
+      // Permite inyectar implementación en tests
+      let DocumentService;
+      if (this.DocumentServiceOverride) {
+        DocumentService = this.DocumentServiceOverride;
+      } else {
+        DocumentService = (await import('../documentService.js')).default;
+      }
       const documentService = new DocumentService();
 
       // Procesar
