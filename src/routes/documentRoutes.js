@@ -1,20 +1,28 @@
 import express from 'express';
 import upload from '../infraestructure/upload/multerConfig.js';
-import documentController from '../controllers/documentController.js';
-import errorHandlers from '../middlewares/errorHandlers.js';
+import documentController from '../controllers/document/documentController.js';
+import errorHandlers from '../middlewares/errorHandler.js';
+import { authentication, isAdmin } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 router.post(
   '/verify-multiple',
   upload.array('documents', 5),
+  authentication,
   documentController.verifyMultipleDocument
 );
 
-router.get('/job/:jobId', documentController.getJobStatus);
-router.get('/job/:jobId/documents', documentController.getDocumentsByJobId);
+router.get('/job/:jobId', authentication, documentController.getJobStatus);
+router.get(
+  '/job/:jobId/documents',
+  authentication,
+  documentController.getDocumentsByJobId
+);
 
-router.get('/history', documentController.getDocumentHistory);
+router.get('/history', authentication, documentController.getDocumentHistory);
+
+router.get('/all', authentication, isAdmin, documentController.getAllDocuments);
 
 router.get('/supported-types', (req, res) => {
   res.json({
