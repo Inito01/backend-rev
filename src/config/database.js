@@ -5,7 +5,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const databasePath = path.join(__dirname, '../../database.sqlite');
+const databaseDir = path.join(__dirname, '../../data');
+const databasePath = path.join(databaseDir, 'database.sqlite');
 
 export const sequelize = new Sequelize({
   dialect: 'sqlite',
