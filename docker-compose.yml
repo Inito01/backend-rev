@@ -9,7 +9,7 @@ services:
       - "${PORT}:${PORT}"
     volumes:
       - ./src/uploads:/app/src/uploads
-      - ./database.sqlite:/app/database.sqlite
+      - ./data:/app/data
     environment:
       - NODE_ENV=${NODE_ENV}
       - PORT=${PORT}
