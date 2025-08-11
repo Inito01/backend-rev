@@ -9,7 +9,7 @@ services:
       - "8000:8000"
     volumes:
       - ./src/uploads:/app/src/uploads
-      - ./database:/app/database
+      - ./database.sqlite:/app/database.sqlite
     environment:
       - NODE_ENV=production
       - PORT=8000
@@ -34,7 +34,3 @@ services:
 networks:
   revtec-network:
     driver: bridge
-
-volumes:
-  database:
-    driver: local
