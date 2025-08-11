@@ -6,15 +6,15 @@ services:
     container_name: revtec-backend
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "${PORT}:${PORT}"
     volumes:
       - ./src/uploads:/app/src/uploads
       - ./database.sqlite:/app/database.sqlite
     environment:
-      - NODE_ENV=production
-      - PORT=8000
-      - OCR_SPACE_API_KEY=ocr-api-key
-      - JWT_SECRET=your-secret
+      - NODE_ENV=${NODE_ENV}
+      - PORT=${PORT}
+      - OCR_SPACE_API_KEY=${OCR_SPACE_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
     networks:
       - revtec-network
 
@@ -27,7 +27,7 @@ services:
     depends_on:
       - backend
     environment:
-      - VITE_API_URL=/api
+      - VITE_API_URL=${FRONTEND_URL}
     networks:
       - revtec-network
 
