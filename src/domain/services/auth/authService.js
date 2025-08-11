@@ -42,7 +42,7 @@ class AuthService {
 
       const isPasswordValid = await user.validPassword(password);
       if (!isPasswordValid) {
-        throw new Error('Contrena incorrecta');
+        throw new Error('Contraseña incorrecta');
       }
 
       const token = this.generateToken(user);
