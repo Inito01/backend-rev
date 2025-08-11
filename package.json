@@ -8,7 +8,10 @@
     "dev": "nodemon src/app.js",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "jest"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --forceExit",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage --forceExit",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:ci": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --coverage --forceExit"
   },
   "author": "Bryan Palma",
   "license": "ISC",
@@ -34,6 +37,10 @@
     "globals": "^16.3.0",
     "jest": "^30.0.5",
     "nodemon": "^3.1.10",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "supertest": "^7.0.0",
+    "@babel/preset-env": "^7.24.3",
+    "babel-jest": "^30.0.5",
+    "jest-mock-extended": "^3.0.5"
   }
 }
