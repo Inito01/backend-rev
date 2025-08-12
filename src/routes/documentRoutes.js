@@ -8,8 +8,8 @@ const router = express.Router();
 
 router.post(
   '/verify-multiple',
-  upload.array('documents', 5),
   authentication,
+  upload.array('documents', 5),
   documentController.verifyMultipleDocument
 );
 
