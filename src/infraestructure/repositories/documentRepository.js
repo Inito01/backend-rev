@@ -1,4 +1,5 @@
 import Document from '../database/models/Document.js';
+import User from '../database/models/User.js';
 
 class DocumentRepository {
   async saveDocument(documentData) {
@@ -10,11 +11,24 @@ class DocumentRepository {
     }
   }
 
-  async getDocumentsByJobId(jobId) {
+  async getDocumentsByJobId(jobId, userId = null) {
     try {
+      const whereClause = { jobId };
+
+      if (userId) {
+        whereClause.userId = userId;
+      }
+
       return await Document.findAll({
-        where: { jobId },
+        where: whereClause,
         order: [['createdAt', 'DESC']],
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'name', 'email'],
+          },
+        ],
       });
     } catch (error) {
       console.error('Error al obtener documentos por jobId: ', error);
@@ -29,6 +43,13 @@ class DocumentRepository {
         order: [['createdAt', 'DESC']],
         limit,
         offset,
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'name', 'email'],
+          },
+        ],
       });
     } catch (error) {
       console.error('Error al obtener documentos por userId: ', error);
@@ -42,6 +63,13 @@ class DocumentRepository {
         order: [['createdAt', 'DESC']],
         limit,
         offset,
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'name', 'email'],
+          },
+        ],
       });
     } catch (error) {
       console.error('Error al obtener todos los documentos: ', error);
