@@ -71,21 +71,34 @@ describe('DocumentController', () => {
   });
 
   describe('getDocumentHistory', () => {
-    it('usa getDocumentByUserId si hay usuario', async () => {
+    it('usa getAllDocuments si el usuario es admin', async () => {
+      req.user = { id: 'user1', role: 'admin' };
+      jest
+        .spyOn(documentRepository, 'getAllDocuments')
+        .mockResolvedValue({ count: 1, rows: [] });
+      jest
+        .spyOn(documentRepository, 'getDocumentByUserId')
+        .mockResolvedValue({ count: 0, rows: [] });
+
+      await documentController.getDocumentHistory(req, res, next);
+
+      expect(documentRepository.getAllDocuments).toHaveBeenCalled();
+      expect(documentRepository.getDocumentByUserId).not.toHaveBeenCalled();
+    });
+
+    it('usa getDocumentByUserId si el usuario no es admin', async () => {
+      req.user = { id: 'user1', role: 'user' };
       jest
         .spyOn(documentRepository, 'getDocumentByUserId')
         .mockResolvedValue({ count: 1, rows: [] });
-      await documentController.getDocumentHistory(req, res, next);
-      expect(documentRepository.getDocumentByUserId).toHaveBeenCalled();
-    });
-
-    it('usa getAllDocuments si no hay userId', async () => {
-      req.user = null;
       jest
         .spyOn(documentRepository, 'getAllDocuments')
         .mockResolvedValue({ count: 0, rows: [] });
+
       await documentController.getDocumentHistory(req, res, next);
-      expect(documentRepository.getAllDocuments).toHaveBeenCalled();
+
+      expect(documentRepository.getDocumentByUserId).toHaveBeenCalled();
+      expect(documentRepository.getAllDocuments).not.toHaveBeenCalled();
     });
   });
 
@@ -97,20 +110,44 @@ describe('DocumentController', () => {
 
     it('retorna 404 sin documentos', async () => {
       req.params.jobId = 'job1';
+      req.user = { id: 'user1', role: 'user' };
       jest
         .spyOn(documentRepository, 'getDocumentsByJobId')
         .mockResolvedValue([]);
       await documentController.getDocumentsByJobId(req, res, next);
       expect(res.status).toHaveBeenCalledWith(404);
+      expect(documentRepository.getDocumentsByJobId).toHaveBeenCalledWith(
+        'job1',
+        'user1'
+      );
     });
 
-    it('retorna 200 con documentos', async () => {
+    it('retorna 200 con documentos para usuario normal', async () => {
       req.params.jobId = 'job1';
+      req.user = { id: 'user1', role: 'user' };
       jest
         .spyOn(documentRepository, 'getDocumentsByJobId')
         .mockResolvedValue([{ id: 1 }]);
       await documentController.getDocumentsByJobId(req, res, next);
       expect(res.status).toHaveBeenCalledWith(200);
+      expect(documentRepository.getDocumentsByJobId).toHaveBeenCalledWith(
+        'job1',
+        'user1'
+      );
+    });
+
+    it('retorna 200 con documentos para admin sin filtrar por userId', async () => {
+      req.params.jobId = 'job1';
+      req.user = { id: 'admin1', role: 'admin' };
+      jest
+        .spyOn(documentRepository, 'getDocumentsByJobId')
+        .mockResolvedValue([{ id: 1 }]);
+      await documentController.getDocumentsByJobId(req, res, next);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(documentRepository.getDocumentsByJobId).toHaveBeenCalledWith(
+        'job1',
+        null
+      );
     });
   });
 
