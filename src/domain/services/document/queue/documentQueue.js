@@ -9,7 +9,7 @@ class DocumentQueue extends EventEmitter {
     this.results = new Map();
   }
 
-  addJob(files, userId = 'anonId') {
+  addJob(files, userId = null) {
     const jobId = this.generateJobId();
     const job = {
       id: jobId,
