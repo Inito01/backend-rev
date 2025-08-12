@@ -103,16 +103,18 @@ class DocumentController {
       const offset = (page - 1) * limit;
 
       const userId = req.user?.id;
+      const isAdmin = req.user?.role === 'admin';
 
       let documents;
-      if (userId) {
+
+      if (isAdmin) {
+        documents = await documentRepository.getAllDocuments(limit, offset);
+      } else {
         documents = await documentRepository.getDocumentByUserId(
           userId,
           limit,
           offset
         );
-      } else {
-        documents = await documentRepository.getAllDocuments(limit, offset);
       }
 
       const totalPages = Math.ceil(documents.count / limit);
@@ -138,6 +140,8 @@ class DocumentController {
   async getDocumentsByJobId(req, res, next) {
     try {
       const { jobId } = req.params;
+      const userId = req.user?.id;
+      const isAdmin = req.user?.role === 'admin';
 
       if (!jobId) {
         return res.status(400).json({
@@ -147,7 +151,10 @@ class DocumentController {
         });
       }
 
-      const documents = await documentRepository.getDocumentsByJobId(jobId);
+      const documents = await documentRepository.getDocumentsByJobId(
+        jobId,
+        isAdmin ? null : userId
+      );
 
       if (!documents || documents.length === 0) {
         return res.status(404).json({
