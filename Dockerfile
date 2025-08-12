@@ -12,6 +12,7 @@ RUN npm ci
 COPY . .
 
 RUN mkdir -p src/uploads && chmod 777 src/uploads
+RUN mkdir -p data && chmod 777 data
 
 EXPOSE 8000
 
