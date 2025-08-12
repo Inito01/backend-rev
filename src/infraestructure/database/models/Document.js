@@ -14,8 +14,12 @@ const Document = sequelize.define(
       allowNull: false,
     },
     userId: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       allowNull: true,
+      references: {
+        model: 'Users',
+        key: 'id',
+      },
     },
     fileName: {
       type: DataTypes.STRING,
