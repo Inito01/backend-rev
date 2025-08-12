@@ -18,6 +18,9 @@ export const initializeDatabase = async () => {
   try {
     await sequelize.authenticate();
     console.log('Conexióin a la base de datos establecida');
+
+    await import('../infraestructure/database/models/associations.js');
+
     await sequelize.sync();
   } catch (error) {
     console.error('Error al conectar a la base de datos: ', error);
