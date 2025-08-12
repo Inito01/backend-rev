@@ -22,11 +22,8 @@ Asegúrate de tener instalados los siguientes programas:
     - Ve a [https://ocr.space/ocrapi](https://ocr.space/ocrapi) y regístrate para obtener una API key gratuita.
 
 3.  **Configura las variables de entorno:**
-    Crea un archivo `.env` en la raíz del directorio `backend-rev` y añade la siguiente variable:
-    ```
-    OCR_API_KEY=TU_API_KEY_DE_OCR_SPACE
-    ```
-    Reemplaza `TU_API_KEY_DE_OCR_SPACE` con la clave que obtuviste en el paso anterior.
+    Copia el archivo `.env.example` y cambiale el nombre a `.env` y reemplaza `TU_API_KEY_DE_OCR_SPACE` con la clave que obtuviste en el paso anterior.
+    En la variable `JWT_SECRET` necesitarás agregar un secret para la autenticación.
 
 ## Cómo levantar el servicio standalone
 
